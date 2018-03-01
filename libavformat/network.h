@@ -149,9 +149,9 @@ struct addrinfo {
 #ifndef EAI_FAMILY
 #define EAI_FAMILY 5
 #endif
-#ifndef EAI_MEMORY
+//#ifndef EAI_MEMORY
 #define EAI_MEMORY 6
-#endif
+//#endif
 #ifndef EAI_NODATA
 #define EAI_NODATA 7
 #endif

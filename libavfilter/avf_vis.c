@@ -272,13 +272,17 @@ static inline void plot(VisContext *s, AVFrame *out, int x, int y_flipped, uint8
         av_log(NULL, AV_LOG_ERROR, "y was too big in plot in vis (was %d, height is %d, so max = h - 1 = %d).\n", y, s->h, s->h - 1);
         return;
     }
-
-    uint32_t color = AV_RL32(out->data[0] + y * out->linesize[0] + x * 4);
-
-    if ((color & 0xffffff) != 0)
-        AV_WL32(out->data[0] + y * out->linesize[0] + x * 4, AV_RL32(fg) | color);
-    else
-        AV_WL32(out->data[0] + y * out->linesize[0] + x * 4, AV_RL32(fg));
+    uint8_t * pixel = out->data[0] + y * out->linesize[0] + x * 4;
+    for(int i = 0; i < 3; ++i){
+        pixel[i] = (uint8_t)(pixel[i] * (float)((255 - fg[3])) / 255) +
+                   (uint8_t)(fg[i] * ((float)fg[3]/255));
+    }
+    if(pixel[3] + fg[3] < pixel[3]){ //avoid uint8 overflow
+        pixel[3] = 255; 
+    }
+    else{
+        pixel[3] += fg[3];
+    }
 }
 
 static void vis_simple_bars(VisContext *s, AVFrame *out, double frequencies[NB_BANDS], int width, int height, uint8_t color[4], double velocities[NB_BANDS], int frame_index) {
