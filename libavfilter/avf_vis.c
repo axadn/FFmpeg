@@ -34,6 +34,8 @@
 #include "internal.h"
 #include "window_func.h"
 
+#include "particleSystem/particleSystem.h"
+
 enum ChannelMode    { COMBINED, SEPARATE, NB_CMODES };
 enum FrequencyScale { FS_LINEAR, FS_LOG, FS_RLOG, NB_FSCALES };
 enum AmplitudeScale { AS_LINEAR, AS_SQRT, AS_CBRT, AS_LOG, NB_ASCALES };
@@ -66,6 +68,7 @@ typedef struct VisContext {
     double heights[NB_BANDS];
     double velocities[NB_BANDS];
     int frame_index;
+    particleSystem * particles;
 } VisContext;
 
 #define OFFSET(x) offsetof(VisContext, x)
