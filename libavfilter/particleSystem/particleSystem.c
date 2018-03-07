@@ -69,8 +69,8 @@ void removeParticleFromList(particle * part, particleList * list){
 }
 
 void killParticle(particleSystem * system, particle * part){
-    removeParticleFromList(part, system->list);
-    addParticleToPool(part, system->pool);
+    removeParticleFromList(part, &system->list);
+    addParticleToPool(part, &system->pool);
 }
 
 void updateParticle(particle* part){
@@ -80,18 +80,18 @@ void updateParticle(particle* part){
     }
 }
 void addParticle(particleSystem * system, float position[2], float velocity[2], int life){
-    particle * part = newParticle(system->pool);
+    particle * part = newParticle(&system->pool);
     part.age = 0;
     for(int i = 0; i < 2; ++i){
         part.position[i] = position[i];
         part.velocity[i] = velocity[i];
     }
     part.life = life;
-    addParticleToList(part, system->list);
+    addParticleToList(part, &system->list);
 }
 
 void updateParticleSystem(particleSystem * system){
-    particle * part = system->list->head;
+    particle * part = system->list.head;
     particle * nextParticle;
     while(part != NULL){
         updateParticle(part);
@@ -103,3 +103,20 @@ void updateParticleSystem(particleSystem * system){
     }
 }
 
+void deleteParticleSystem(particleSystem * system){
+    particle * part = system->list.head;
+    while(part != NULL){
+        free(part);
+        part = part->next;
+    }
+    part = system->pool.head;
+    while(part != NULL){
+        free(part);
+        part = part->next;
+    }
+    free(system);
+}
+
+particleSystem * createParticleSystem(){
+    return (particleSystem*) malloc(sizeof(particleSystem));
+}
