@@ -91,6 +91,15 @@ void addParticle(particleSystem * system, float position[2], float velocity[2], 
 }
 
 void updateParticleSystem(particleSystem * system){
-    
+    particle * part = system->list->head;
+    particle * nextParticle;
+    while(part != NULL){
+        updateParticle(part);
+        nextParticle = part->next;
+        if(part->age > part->life){
+            killParticle(system, part);
+        }
+        part = nextParticle;
+    }
 }
 
