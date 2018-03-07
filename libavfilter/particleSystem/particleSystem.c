@@ -74,19 +74,19 @@ void killParticle(particleSystem * system, particle * part){
 }
 
 void updateParticle(particle* part){
-    ++part.age;
+    ++part->age;
     for(int i = 0; i < 2; ++i){
         part->position[i] += part->velocity[i];
     }
 }
 void addParticle(particleSystem * system, float position[2], float velocity[2], int life){
     particle * part = newParticle(&system->pool);
-    part.age = 0;
+    part->age = 0;
     for(int i = 0; i < 2; ++i){
-        part.position[i] = position[i];
-        part.velocity[i] = velocity[i];
+        part->position[i] = position[i];
+        part->velocity[i] = velocity[i];
     }
-    part.life = life;
+    part->life = life;
     addParticleToList(part, &system->list);
 }
 
