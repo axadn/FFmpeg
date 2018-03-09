@@ -313,7 +313,7 @@ const int med_color_age = 3;
 const uint8_t hot_color[4] = {255, 255, 255, 255};
 const uint8_t med_color[4] = {180, 200, 250, 255};
 
-const int particle_rendered_size = particle_size * width;
+const float particle_size = 0.006;
 
 static void spawn_flame_particles(VisContext *s, AVFrame *out, double frequencies[NB_BANDS]){
     int flame_index;
@@ -348,13 +348,13 @@ inline void lerp_flame_particle_color(particle* part, uint8_t * color, uint8_t *
     }
 }
 
-inline void draw_flame_particle(particle * part, VisContext *s, AVFrame *out, int width, int height, uint8_t color[4]){
+inline void draw_flame_particle(particle * part, VisContext *s, AVFrame *out, int width, int height, uint8_t color[4], float renderedSize){
     int x;
     int y;
-    for(int particleX = 0; particleX < particle_rendered_size; ++ particleX){
+    for(int particleX = 0; particleX < renderedSize; ++ particleX){
         x = part->position[0] * width + particleX;
         if(x >= width || x < 0) continue;
-        for(int particleY = 0; particleY < particle_rendered_size; ++ particleY){
+        for(int particleY = 0; particleY < renderedSize; ++ particleY){
             y = part->position[1] * height + particleY;
             if( y >= height || y < 0) continue;
             plot(s, out, x, y, color);
@@ -363,14 +363,14 @@ inline void draw_flame_particle(particle * part, VisContext *s, AVFrame *out, in
 }
 
 static void render_flame_particles(VisContext *s, AVFrame *out, int width, int height, uint8_t cold_color[4]){
-    const float particle_size = 0.006;
+    const int particle_rendered_size = particle_size * width;
     const particleSystem * sys = s->particles;
     particle * part = sys->list.head;
     particle * nextParticle;
     const uint8_t color[4];
     while(part != NULL){
         lerp_flame_particle_color(part, color, cold_color);
-        draw_flame_particle(part, s, out, width, height, color);
+        draw_flame_particle(part, s, out, width, height, color , particle_rendered_size);
         part = part->next;
     }
 }
