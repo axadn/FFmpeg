@@ -1,6 +1,7 @@
-#include "particleSytem.h"
+#include "particleSystem.h"
+#include <stdlib.h>
 
-particle * newParticle(particlePool * pool){
+static particle * newParticle(particlePool * pool){
     particle * newParticle;
     if(pool->head == NULL){
         newParticle = malloc(sizeof(particle));
@@ -12,7 +13,7 @@ particle * newParticle(particlePool * pool){
     return newParticle;
 }
 
-void addParticleToList(particle* part, particleList * list){
+static void addParticleToList(particle* part, particleList * list){
     if(list->head == NULL){
         list->head = part;
         list->tail = part;
@@ -25,12 +26,12 @@ void addParticleToList(particle* part, particleList * list){
     list->tail->next = NULL;
 }
 
-void addParticleToPool(particle * part, particlePool * pool){
-    particle->next = pool->head;
-    pool->head = particle;
+static void addParticleToPool(particle * part, particlePool * pool){
+    part->next = pool->head;
+    pool->head = part;
 }
 
-void removeParticleFromList(particle * part, particleList * list){
+static void removeParticleFromList(particle * part, particleList * list){
     if(part == list->head){
         list->head = part->next;
     }
@@ -45,12 +46,12 @@ void removeParticleFromList(particle * part, particleList * list){
     }
 }
 
-void killParticle(particleSystem * system, particle * part){
+static void killParticle(particleSystem * system, particle * part){
     removeParticleFromList(part, &system->list);
     addParticleToPool(part, &system->pool);
 }
 
-void updateParticle(particle* part){
+static void updateParticle(particle* part){
     ++part->age;
     for(int i = 0; i < 2; ++i){
         part->position[i] += part->velocity[i];
