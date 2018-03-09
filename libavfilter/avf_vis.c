@@ -332,7 +332,7 @@ static void spawn_flame_particles(VisContext *s, AVFrame *out, double frequencie
     }
 }
 
-inline void lerp_flame_particle_color(particle* part, uint8_t * color, uint8_t * cold_color){
+static inline void lerp_flame_particle_color(particle* part, uint8_t * color, uint8_t * cold_color){
     float colorLerpAmount;
     if(part->age <= med_color_age){
         for(int i = 0; i < 4; ++i){
@@ -349,7 +349,7 @@ inline void lerp_flame_particle_color(particle* part, uint8_t * color, uint8_t *
     }
 }
 
-inline void draw_flame_particle(particle * part, VisContext *s, AVFrame *out, int width, int height, uint8_t color[4], float renderedSize){
+static inline void draw_flame_particle(particle * part, VisContext *s, AVFrame *out, int width, int height, uint8_t color[4], float renderedSize){
     int x;
     int y;
     for(int particleX = 0; particleX < renderedSize; ++ particleX){
