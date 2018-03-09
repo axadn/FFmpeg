@@ -39,7 +39,7 @@
 enum ChannelMode    { COMBINED, SEPARATE, NB_CMODES };
 enum FrequencyScale { FS_LINEAR, FS_LOG, FS_RLOG, NB_FSCALES };
 enum AmplitudeScale { AS_LINEAR, AS_SQRT, AS_CBRT, AS_LOG, NB_ASCALES };
-enum Vis { NONE, SIMPLE_BARS, PIXEL_BARS, SHAKING_CENTER_BARS, MOVING_BLOB, NB_VIS };
+enum Vis { NONE, FLAMES, SIMPLE_BARS, PIXEL_BARS, SHAKING_CENTER_BARS, MOVING_BLOB, NB_VIS };
 
 #define NB_BANDS 20
 
@@ -79,6 +79,7 @@ static const AVOption vis_options[] = {
     { "s",    "set video size", OFFSET(w), AV_OPT_TYPE_IMAGE_SIZE, {.str = "1024x512"}, 0, 0, FLAGS },
     { "mode", "set display mode", OFFSET(mode), AV_OPT_TYPE_INT, {.i64=SIMPLE_BARS}, 0, NB_VIS-1, FLAGS, "mode" },
         { "none", "all background", 0, AV_OPT_TYPE_CONST, {.i64=NONE}, 0, 0, FLAGS, "mode" },
+        { "flames", "flame-like visualization", 0, AV_OPT_TYPE_CONST, {.i64=FLAMES}, 0, 0, FLAGS, "mode"},
         { "simple_bars", "simple 20-band bars", 0, AV_OPT_TYPE_CONST, {.i64=SIMPLE_BARS}, 0, 0, FLAGS, "mode" },
         { "pixel_bars", "pixellized 20-band bars", 0, AV_OPT_TYPE_CONST, {.i64=PIXEL_BARS}, 0, 0, FLAGS, "mode" },
         { "shaking_center_bars", "bars in the center that beat in time", 0, AV_OPT_TYPE_CONST, {.i64=SHAKING_CENTER_BARS}, 0, 0, FLAGS, "mode" },
@@ -169,7 +170,7 @@ static av_cold int init(AVFilterContext *ctx)
     VisContext *s = ctx->priv;
 
     s->pts = AV_NOPTS_VALUE;
-
+    s->particles = createParticleSystem();
     return 0;
 }
 
@@ -298,6 +299,86 @@ static void vis_simple_bars(VisContext *s, AVFrame *out, double frequencies[NB_B
             }
         }
     }
+}
+
+const double flame_width = 1 / NB_BANDS;
+const int full_amp_spawn_count = 16;
+const float max_init_up = 0.07;
+const float init_up_rand = 0.01;
+const float init_x_rand = 0.003;
+const int particle_life = 12;
+
+const int cold_color_age = 3;
+const int med_color_age = 3;
+const uint8_t hot_color[4] = {255, 255, 255, 255};
+const uint8_t med_color[4] = {180, 200, 250, 255};
+
+const int particle_rendered_size = particle_size * width;
+
+static void spawn_flame_particles(VisContext *s, AVFrame *out, double frequencies[NB_BANDS]){
+    int flame_index;
+    float initialPosition[2];
+    float initialVelocity[2];
+    const particleSystem * sys = s->particles;
+    for(flame_index = 0; flame_index < NB_BANDS; flame_index++){
+        for(int i = 0; i < floor(frequencies[flame_index] * full_amp_spawn_count); ++i){
+           initialPosition[0] = flame_index * flame_width + rand() / (float) RAND_MAX * flame_width;
+           initialPosition[1] = 0;
+
+           initialVelocity[0] = -1 * rand() / (float) RAND_MAX * init_x_rand + 2 * rand() / (float) RAND_MAX;
+           initialVelocity[1] = max_init_up * frequencies[flame_index] - init_up_rand * rand() / (float) RAND_MAX * frequencies[flame_index];
+           addParticle(sys, initialPosition, initialVelocity, particle_life);
+        }
+    }
+}
+
+inline void lerp_flame_particle_color(particle* part, uint8_t * color, uint8_t * cold_color){
+    float colorLerpAmount;
+    if(part->age <= med_color_age){
+        for(int i = 0; i < 4; ++i){
+            color[i] = (1 - colorLerpAmount) * hot_color[i] + colorLerpAmount * med_color[i];
+        }
+    }
+    else{
+        colorLerpAmount = (part->age - med_color_age) / (cold_color_age - med_color_age);
+        colorLerpAmount = min(colorLerpAmount, 1);
+        for(int i = 0; i < 4; ++i){
+            color[i] = (1 - colorLerpAmount) * med_color[i] + colorLerpAmount * cold_color[i];
+        }
+    }
+}
+
+inline void draw_flame_particle(particle * part, VisContext *s, AVFrame *out, int width, int height, uint8_t color[4]){
+    int x;
+    int y;
+    for(int particleX = 0; particleX < particle_rendered_size; ++ particleX){
+        x = part->position[0] * width + particleX;
+        if(x >= width || x < 0) continue;
+        for(int particleY = 0; particleY < particle_rendered_size; ++ particleY){
+            y = part->position[1] * height + particleY;
+            if( y >= height || y < 0) continue;
+            plot(s, out, x, y, color);
+        }
+    }
+}
+
+static void render_flame_particles(VisContext *s, AVFrame *out, int width, int height, uint8_t cold_color[4]){
+    const float particle_size = 0.006;
+    const particleSystem * sys = s->particles;
+    particle * part = sys->list.head;
+    particle * nextParticle;
+    const uint8_t color[4];
+    while(part != NULL){
+        lerp_flame_particle_color(part, color, cold_color);
+        draw_flame_particle(part, s, out, width, height, color);
+        part = part->next;
+    }
+}
+
+static void vis_flames(VisContext *s, AVFrame *out, double frequencies[NB_BANDS], int width, int height, uint8_t color[4], double velocities[NB_BANDS], int frame_index) {
+    spawn_flame_particles(s, out, frequencies);
+    render_flame_particles(s, out, width, height, color);
+    updateParticleSystem(system);
 }
 
 static void vis_pixel_bars(VisContext *s, AVFrame *out, double frequencies[NB_BANDS], int width, int height, uint8_t color[4], double velocities[NB_BANDS], int frame_index) {
@@ -490,6 +571,7 @@ static int plot_freqs(AVFilterLink *inlink, AVFrame *in)
 
     switch (s->mode) {
         case NONE:                 vis = vis_none;                 break;
+        case FLAMES:               vis = vis_flames;               break;
         case SIMPLE_BARS:          vis = vis_simple_bars;          break;
         case PIXEL_BARS:           vis = vis_pixel_bars;           break;
         case SHAKING_CENTER_BARS:  vis = vis_shaking_center_bars;  break;
@@ -544,6 +626,8 @@ fail:
 static av_cold void uninit(AVFilterContext *ctx)
 {
     VisContext *s = ctx->priv;
+    deleteParticleSystem(s->particles);
+
     int i;
 
     av_fft_end(s->fft);
