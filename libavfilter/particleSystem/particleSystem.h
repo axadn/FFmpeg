@@ -1,3 +1,4 @@
+typedef struct particle particle;
 typedef struct particle{
     float position[2];
     float velocity[2];

@@ -341,7 +341,8 @@ inline void lerp_flame_particle_color(particle* part, uint8_t * color, uint8_t *
     }
     else{
         colorLerpAmount = (part->age - med_color_age) / (cold_color_age - med_color_age);
-        colorLerpAmount = min(colorLerpAmount, 1);
+        colorLerpAmount = colorLerpAmount;
+        if(colorLerpAmount > 1) colorLerpAmount = 1;
         for(int i = 0; i < 4; ++i){
             color[i] = (1 - colorLerpAmount) * med_color[i] + colorLerpAmount * cold_color[i];
         }
@@ -370,7 +371,7 @@ static void render_flame_particles(VisContext *s, AVFrame *out, int width, int h
     const uint8_t color[4];
     while(part != NULL){
         lerp_flame_particle_color(part, color, cold_color);
-        draw_flame_particle(part, s, out, width, height, color , particle_rendered_size);
+        draw_flame_particle(part, s, out, width, height, color ,particle_rendered_size);
         part = part->next;
     }
 }
