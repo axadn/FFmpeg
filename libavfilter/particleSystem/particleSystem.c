@@ -1,5 +1,6 @@
 #include "particleSystem.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 static particle * newParticle(particlePool * pool){
     particle * newParticle;
@@ -83,18 +84,25 @@ void updateParticleSystem(particleSystem * system){
 
 void deleteParticleSystem(particleSystem * system){
     particle * part = system->list.head;
+    particle * nextParticle;
     while(part != NULL){
+        nextParticle = part->next;
         free(part);
-        part = part->next;
+        part = nextParticle;
     }
     part = system->pool.head;
     while(part != NULL){
+        nextParticle = part->next;
         free(part);
-        part = part->next;
+        part = nextParticle;
     }
     free(system);
 }
 
 particleSystem * createParticleSystem(){
-    return (particleSystem*) malloc(sizeof(particleSystem));
+    particleSystem * system = (particleSystem*) malloc(sizeof(particleSystem));
+    system->list.head = NULL;
+    system->list.tail = NULL;
+    system->pool.head = NULL;
+    return system;
 }

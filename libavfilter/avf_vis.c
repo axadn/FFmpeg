@@ -301,19 +301,19 @@ static void vis_simple_bars(VisContext *s, AVFrame *out, double frequencies[NB_B
     }
 }
 
-const double flame_width = 1 / NB_BANDS;
-const int full_amp_spawn_count = 16;
-const float max_init_up = 0.07;
-const float init_up_rand = 0.01;
-const float init_x_rand = 0.003;
-const int particle_life = 12;
+const double flame_width = 1 / (double)NB_BANDS;
+const int full_amp_spawn_count = 30;
+const float max_init_up = 0.15;
+const float init_up_rand = 0.1;
+const float init_x_rand = 0.005;
+const int particle_life = 6;
 
-const int cold_color_age = 3;
-const int med_color_age = 3;
+const int cold_color_age = 6;
+const int med_color_age = 2;
 const uint8_t hot_color[4] = {255, 255, 255, 255};
-const uint8_t med_color[4] = {180, 200, 250, 255};
+const uint8_t med_color[4] = {255, 232, 165, 255};
 
-const float particle_size = 0.006;
+const float particle_size = 0.02;
 
 static void spawn_flame_particles(VisContext *s, AVFrame *out, double frequencies[NB_BANDS]){
     int flame_index;
@@ -325,7 +325,7 @@ static void spawn_flame_particles(VisContext *s, AVFrame *out, double frequencie
            initialPosition[0] = flame_index * flame_width + rand() / (float) RAND_MAX * flame_width;
            initialPosition[1] = 0;
 
-           initialVelocity[0] = -1 * rand() / (float) RAND_MAX * init_x_rand + 2 * rand() / (float) RAND_MAX;
+           initialVelocity[0] = -1 * rand() / (float) RAND_MAX * init_x_rand + 2 * rand() / (float) RAND_MAX * init_x_rand;
            initialVelocity[1] = max_init_up * frequencies[flame_index] - init_up_rand * rand() / (float) RAND_MAX * frequencies[flame_index];
            addParticle(sys, initialPosition, initialVelocity, particle_life);
         }
@@ -336,11 +336,12 @@ static inline void lerp_flame_particle_color(particle* part, uint8_t * color, ui
     float colorLerpAmount;
     if(part->age <= med_color_age){
         for(int i = 0; i < 4; ++i){
+            colorLerpAmount = part->age / (float) med_color_age;
             color[i] = (1 - colorLerpAmount) * hot_color[i] + colorLerpAmount * med_color[i];
         }
     }
     else{
-        colorLerpAmount = (part->age - med_color_age) / (cold_color_age - med_color_age);
+        colorLerpAmount = (part->age - med_color_age) / (float)(cold_color_age - med_color_age);
         colorLerpAmount = colorLerpAmount;
         if(colorLerpAmount > 1) colorLerpAmount = 1;
         for(int i = 0; i < 4; ++i){
@@ -378,8 +379,9 @@ static void render_flame_particles(VisContext *s, AVFrame *out, int width, int h
 
 static void vis_flames(VisContext *s, AVFrame *out, double frequencies[NB_BANDS], int width, int height, uint8_t color[4], double velocities[NB_BANDS], int frame_index) {
     spawn_flame_particles(s, out, frequencies);
-    render_flame_particles(s, out, width, height, color);
-    updateParticleSystem(system);
+    const uint8_t cold_color[4] = {color[0], color[1], color[2], 100};
+    render_flame_particles(s, out, width, height, cold_color);
+    updateParticleSystem(s->particles);
 }
 
 static void vis_pixel_bars(VisContext *s, AVFrame *out, double frequencies[NB_BANDS], int width, int height, uint8_t color[4], double velocities[NB_BANDS], int frame_index) {

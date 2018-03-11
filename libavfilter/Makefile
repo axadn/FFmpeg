@@ -7,7 +7,6 @@ HEADERS = avfilter.h                                                    \
           buffersink.h                                                  \
           buffersrc.h                                                   \
           version.h                                                     \
-          particles
 
 OBJS = allfilters.o                                                     \
        audio.o                                                          \
@@ -24,9 +23,9 @@ OBJS = allfilters.o                                                     \
        opencl_allkernels.o                                              \
        transform.o                                                      \
        video.o                                                          \
+       particleSystem/particleSystem.o                                  \
 
 OBJS-$(HAVE_THREADS)                         += pthread.o
-
 # audio filters
 OBJS-$(CONFIG_ABENCH_FILTER)                 += f_bench.o
 OBJS-$(CONFIG_ACOMPRESSOR_FILTER)            += af_sidechaincompress.o
@@ -327,7 +326,7 @@ OBJS-$(CONFIG_SHOWVOLUME_FILTER)             += avf_showvolume.o
 OBJS-$(CONFIG_SHOWWAVES_FILTER)              += avf_showwaves.o
 OBJS-$(CONFIG_SHOWWAVESPIC_FILTER)           += avf_showwaves.o
 OBJS-$(CONFIG_SPECTRUMSYNTH_FILTER)          += vaf_spectrumsynth.o window_func.o
-OBJS-$(CONFIG_VIS_FILTER)                    += avf_vis.o window_func.o particleSystem/particleSystem.o
+OBJS-$(CONFIG_VIS_FILTER)                    += avf_vis.o window_func.o 
 
 # multimedia sources
 OBJS-$(CONFIG_AMOVIE_FILTER)                 += src_movie.o
